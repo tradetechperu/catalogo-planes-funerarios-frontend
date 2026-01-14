@@ -61,22 +61,28 @@ export default function Listado() {
     activo: "todos",
   });
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        setLoading(true);
-        const r = await apiFetch("/api/planes");
-        const data = await r.json();
-        if (alive) setPlanes(Array.isArray(data) ? data : []);
-      } catch (e) {
-        if (alive) setPlanes([]);
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
-    return () => (alive = false);
-  }, []);
+useEffect(() => {
+  let alive = true;
+  (async () => {
+    try {
+      setLoading(true);
+
+      const r = await apiFetch("/api/planes");
+
+      // Soporta ambos: apiFetch devuelve Response (tiene .json) o devuelve data directo
+      const data = typeof r?.json === "function" ? await r.json() : r;
+
+      if (alive) setPlanes(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error("Error cargando planes:", e);
+      if (alive) setPlanes([]);
+    } finally {
+      if (alive) setLoading(false);
+    }
+  })();
+  return () => (alive = false);
+}, []);
+
 
   const options = useMemo(() => {
     // tags únicos
