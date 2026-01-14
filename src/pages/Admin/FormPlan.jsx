@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { api } from "../../utils/api";
+import { apiUrl } from "../../lib/http";
 import {
   Box,
   Container,
@@ -18,12 +19,10 @@ import {
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 
-const API_BASE = process.env.REACT_APP_API_URL || "";
-
 function resolveImg(src) {
   if (!src) return "";
   if (src.startsWith("http://") || src.startsWith("https://")) return src;
-  if (src.startsWith("/uploads/") && API_BASE) return `${API_BASE}${src}`;
+  if (src.startsWith("/uploads/")) return apiUrl(src); // arma https://backend/uploads/...
   return src;
 }
 
@@ -83,26 +82,26 @@ export default function FormPlan() {
 
   const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
 
-  const uploadGallery = async (files) => {
-    setError("");
-    if (!API_BASE) throw new Error("REACT_APP_API_URL no está configurado.");
+const uploadGallery = async (files) => {
+  setError("");
 
-    const token = localStorage.getItem("admin_token") || "";
-    if (!token) throw new Error("No autorizado");
+  const token = localStorage.getItem("admin_token") || "";
+  if (!token) throw new Error("No autorizado");
 
-    const fd = new FormData();
-    for (const f of files) fd.append("files", f);
+  const fd = new FormData();
+  for (const f of files) fd.append("files", f);
 
-    const r = await fetch(`${API_BASE}/api/upload/multiple`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: fd,
-    });
+  const r = await fetch(apiUrl("/api/upload/multiple"), {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: fd,
+  });
 
-    const data = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(data?.message || "Error al subir imágenes");
-    return data.paths || [];
-  };
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data?.message || "Error al subir imágenes");
+  return data.paths || [];
+};
+
 
   const allFotos = useMemo(() => {
     const uniq = new Set();
